@@ -1,0 +1,52 @@
+package org.limao996.kiotest
+
+import android.content.Intent
+import android.os.Bundle
+import android.util.Log
+import androidx.appcompat.app.AppCompatActivity
+import org.limao996.kio.Kio
+
+class MainActivity : AppCompatActivity() {
+    private val kio = Kio(this)
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        getDatabasePath("test.txt").createNewFile()
+
+        val a = kio.open(
+            getDatabasePath("test.txt").absolutePath
+        )
+        a.outputStream.writer()
+            .apply {
+                write("测试1")
+                close()
+            }
+        log(
+            "A",
+            a.inputStream.reader()
+                .readText()
+        )
+
+        val b = kio.open("/sdcard/Android/data/bin.mt.plus/a.txt")
+        b.outputStream.writer()
+            .apply {
+                write("测试2")
+                close()
+            }
+        log(
+            "B",
+            b.inputStream.reader()
+                .readText()
+        )
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        kio.onActivityResult(requestCode, resultCode, data)
+    }
+}
+
+fun log(vararg msg: Any?) {
+    Log.i("KioLog", msg.joinToString("\t"))
+}
