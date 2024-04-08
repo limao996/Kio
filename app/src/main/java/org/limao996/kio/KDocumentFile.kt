@@ -11,6 +11,17 @@ import android.provider.DocumentsContract
 import kotlin.random.Random
 
 /**
+ * 根Uri
+ */
+private const val RootUri = "content://com.android.externalstorage.documents/tree/primary%3A"
+
+/**
+ * SAF权限
+ */
+private const val SafPermission =
+    Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+
+/**
  * [Kio] 虚拟文件
  *
  * @property context 应用上下文
@@ -209,18 +220,4 @@ class KDocumentFile(
      */
     override fun isDocumentFile(): Boolean = true
 
-    companion object {
-        /**
-         * 根Uri
-         */
-        private const val RootUri =
-            "content://com.android.externalstorage.documents/tree/primary%3A"
-
-        /**
-         * SAF权限
-         */
-        private const val SafPermission =
-            Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-
-    }
 }
