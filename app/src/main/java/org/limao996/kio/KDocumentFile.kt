@@ -6,22 +6,9 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build.VERSION.SDK_INT
+import android.os.ParcelFileDescriptor
 import android.provider.DocumentsContract
-import java.io.FileInputStream
-import java.io.FileOutputStream
 import kotlin.random.Random
-
-
-/**
- * 根Uri
- */
-private const val RootUri = "content://com.android.externalstorage.documents/tree/primary%3A"
-
-/**
- * SAF权限
- */
-private const val SafPermission =
-    Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
 
 /**
  * [Kio] 虚拟文件
@@ -30,7 +17,9 @@ private const val SafPermission =
  * @property path 文件路径
  * @constructor 创建 [KDocumentFile] 以操作虚拟文件
  */
-class KDocumentFile(private val context: Context, override val path: String) : KFile(path) {
+class KDocumentFile(
+    private val context: Context, override val path: String
+) : KFile(path) {
 
     /**
      * 首页Uri
@@ -93,25 +82,58 @@ class KDocumentFile(private val context: Context, override val path: String) : K
         nodeUri = Uri.parse(uri)
     }
 
-    /**
-     * 文件输入流
-     */
-    override val inputStream by lazy { contentResolver.openInputStream(nodeUri)!! }
 
     /**
-     * 文件输出流
+     * 打开文件输入流
+     *
+     * @return 输入流
      */
-    override val outputStream by lazy { contentResolver.openOutputStream(nodeUri)!! }
+    override fun openInputStream() =
+        ParcelFileDescriptor.AutoCloseInputStream(openFileDescriptor("r"))
 
     /**
-     * 文件输入通道
+     * 打开文件输出流
+     *
+     * @param mode 写入模式
+     * - `w`: 覆盖
+     * - `a`: 追加
+     * - `t`: 截断
+     * @return 输出流
      */
-    override val inputChannel by lazy { (inputStream as FileInputStream).channel!! }
+    override fun openOutputStream(mode: String) =
+        ParcelFileDescriptor.AutoCloseOutputStream(openFileDescriptor(mode))
 
     /**
-     * 文件输出通道
+     * 打开文件输入通道
+     *
+     * @return 输入通道
      */
-    override val outputChannel by lazy { (outputStream as FileOutputStream).channel!! }
+    override fun openInputChannel() = openInputStream().channel!!
+
+    /**
+     * 打开文件输出通道
+     *
+     * @param mode 写入模式
+     * - `w`: 覆盖
+     * - `a`: 追加
+     * - `t`: 截断
+     * @return 输出通道
+     */
+    override fun openOutputChannel(mode: String) = openOutputStream(mode).channel!!
+
+    /**
+     * 打开文件句柄
+     *
+     * @param mode 文件模式 `"r"` `"w"` `"a"` `"t"`
+     * @return 文件句柄
+     */
+    override fun openFileDescriptor(mode: String) = contentResolver.openFileDescriptor(
+        nodeUri, when (mode) {
+            "a" -> "wa"
+            "t" -> "wt"
+            else -> mode
+        }
+    )!!
 
     /**
      * 检查权限
@@ -135,14 +157,14 @@ class KDocumentFile(private val context: Context, override val path: String) : K
      * @param callback 请求权限回调，返回请求结果
      */
     @SuppressLint("WrongConstant")
-    override fun requestPermission(callback: (Boolean) -> Unit) {
+    override fun requestPermission(callback: ((Boolean) -> Unit)) {
         // 限制上下文必须是 [Activity]
         assert(context is Activity) { KioException("No Activity cannot apply for permissions") }
 
         // 获取虚拟文件id
         val id = DocumentsContract.getTreeDocumentId(homeUri)
         // 创建 [Intent] 对象
-        val intent = Intent("android.intent.action.OPEN_DOCUMENT_TREE").setFlags(
+        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).setFlags(
             Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION.or(
                 Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION
             ) or Intent.FLAG_GRANT_PREFIX_URI_PERMISSION
@@ -186,4 +208,19 @@ class KDocumentFile(private val context: Context, override val path: String) : K
      * @return 判断结果
      */
     override fun isDocumentFile(): Boolean = true
+
+    companion object {
+        /**
+         * 根Uri
+         */
+        private const val RootUri =
+            "content://com.android.externalstorage.documents/tree/primary%3A"
+
+        /**
+         * SAF权限
+         */
+        private const val SafPermission =
+            Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+
+    }
 }

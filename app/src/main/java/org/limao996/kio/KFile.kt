@@ -1,46 +1,62 @@
 package org.limao996.kio
 
 import android.os.Build.VERSION.SDK_INT
-import java.io.InputStream
-import java.io.OutputStream
+import android.os.ParcelFileDescriptor
+import java.io.FileInputStream
+import java.io.FileOutputStream
 import java.nio.channels.FileChannel
-
-/**
- * 虚拟目录列表
- */
-private val DocumentPaths = arrayOf(
-    "sdcard/Android/data", "storage/emulated/0/Android/data",
-    "sdcard/Android/obb", "storage/emulated/0/Android/obb",
-)
 
 /**
  * [Kio] 文件抽象类
  *
- * @property context 应用上下文
  * @property path 文件路径
  * @constructor 创建 [KFile] 对象以操作文件
  */
 abstract class KFile(open val path: String) {
 
     /**
-     * 文件输入流
+     * 打开文件输入流
+     *
+     * @return 输入流
      */
-    abstract val inputStream: InputStream
+    abstract fun openInputStream(): FileInputStream
 
     /**
-     * 文件输出流
+     * 打开文件输出流
+     *
+     * @param mode 写入模式
+     * - `w`: 覆盖
+     * - `a`: 追加
+     * - `t`: 截断
+     * @return 输出流
      */
-    abstract val outputStream: OutputStream
+    abstract fun openOutputStream(mode: String = "w"): FileOutputStream
 
     /**
-     * 文件输入通道
+     * 打开文件输入通道
+     *
+     * @return 输入通道
      */
-    abstract val inputChannel: FileChannel
+    abstract fun openInputChannel(): FileChannel
 
     /**
-     * 文件输出通道
+     * 打开文件输出通道
+     *
+     * @param mode 写入模式
+     * - `w`: 覆盖
+     * - `a`: 追加
+     * - `t`: 截断
+     * @return 输出通道
      */
-    abstract val outputChannel: FileChannel
+    abstract fun openOutputChannel(mode: String = "w"): FileChannel
+
+    /**
+     * 打开文件句柄
+     *
+     * @param mode 文件模式 `"r"` `"w"` `"a"` `"t"`
+     * @return 文件句柄
+     */
+    abstract fun openFileDescriptor(mode: String): ParcelFileDescriptor
 
     /**
      * 检查权限
@@ -54,7 +70,7 @@ abstract class KFile(open val path: String) {
      *
      * @param callback 请求权限回调，返回请求结果
      */
-    abstract fun requestPermission(callback: (Boolean) -> Unit)
+    abstract fun requestPermission(callback: (Boolean) -> Unit = {})
 
     /**
      * 释放权限
@@ -72,10 +88,20 @@ abstract class KFile(open val path: String) {
 
     companion object {
         /**
+         * 虚拟目录列表
+         */
+        @JvmStatic
+        private val DocumentPaths = arrayOf(
+            "sdcard/Android/data", "storage/emulated/0/Android/data",
+            "sdcard/Android/obb", "storage/emulated/0/Android/obb",
+        )
+
+        /**
          * 是否为虚拟文件
          *
          * @param file [Kio] 文件对象
          */
+        @JvmStatic
         fun isDocumentFile(file: KFile) = file.isDocumentFile()
 
         /**
@@ -83,6 +109,7 @@ abstract class KFile(open val path: String) {
          *
          * @param path 文件路径
          */
+        @JvmStatic
         fun isDocumentFile(path: String): Boolean {
             // 低版本不需要 `Saf`
             if (SDK_INT < 30) return false
@@ -101,6 +128,7 @@ abstract class KFile(open val path: String) {
          * @param path 绝对路径
          * @return 虚拟路径
          */
+        @JvmStatic
         fun toDocumentPath(path: String): String {
             // 格式化路径
             val rawPath = formatPath(path)
@@ -123,6 +151,7 @@ abstract class KFile(open val path: String) {
          * @param path 文件路径
          * @return 结果
          */
+        @JvmStatic
         private fun formatPath(path: String): String {
             var newPath = path
             // 去头

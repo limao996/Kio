@@ -17,28 +17,36 @@ class MainActivity : AppCompatActivity() {
         val a = kio.open(
             getDatabasePath("test.txt").absolutePath
         )
-        a.outputStream.writer()
+        if (!a.checkPermission()) a.requestPermission()
+        a.openOutputStream("t")
+            .writer()
             .apply {
-                write("测试1")
+                write("测试A")
                 close()
             }
         log(
             "A",
-            a.inputStream.reader()
+            a.openInputStream()
+                .reader()
                 .readText()
         )
 
         val b = kio.open("/sdcard/Android/data/bin.mt.plus/a.txt")
-        b.outputStream.writer()
-            .apply {
-                write("测试2")
-                close()
-            }
-        log(
-            "B",
-            b.inputStream.reader()
-                .readText()
-        )
+        if (!b.checkPermission()) b.requestPermission()
+        else {
+            b.openOutputStream("t")
+                .writer()
+                .apply {
+                    write("测试B")
+                    close()
+                }
+            log(
+                "B",
+                b.openInputStream()
+                    .reader()
+                    .readText()
+            )
+        }
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {

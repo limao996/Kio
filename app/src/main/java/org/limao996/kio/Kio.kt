@@ -40,6 +40,7 @@ class Kio(private val context: Context) {
         /**
          * `onActivityResult` 回调队列的映射表
          */
+        @JvmStatic
         val onActivityResultCallbackListMap =
             WeakHashMap<Context, ArrayList<OnActivityResultCallback>>()
 
@@ -49,6 +50,7 @@ class Kio(private val context: Context) {
          * @param context 应用上下文
          * @param callback 回调函数
          */
+        @JvmStatic
         fun registerActivityResultCallback(context: Context, callback: OnActivityResultCallback) {
             onActivityResultCallbackListMap[context]!!.add(callback)
         }
@@ -58,6 +60,7 @@ class Kio(private val context: Context) {
          *
          * @param path 文件路径
          */
+        @JvmStatic
         fun isDocumentFile(path: String) = KFile.isDocumentFile(path)
     }
 
@@ -82,7 +85,9 @@ class Kio(private val context: Context) {
      */
     fun requestPermission(path: String, callback: (Boolean) -> Unit) {
         if (isDocumentFile(path)) {
-            return KDocumentFile(context, KFile.toDocumentPath(path)).requestPermission(callback)
+            return KDocumentFile(context, KFile.toDocumentPath(path)).requestPermission(
+                callback
+            )
         }
         return KStorageFile(path).requestPermission(callback)
     }

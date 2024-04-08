@@ -1,13 +1,11 @@
 package org.limao996.kio
 
+import android.os.ParcelFileDescriptor
 import java.io.File
-import java.io.FileInputStream
-import java.io.FileOutputStream
 
 /**
  * [Kio] 磁盘文件
  *
- * @property context 应用上下文
  * @property path 文件路径
  * @constructor 创建 [KStorageFile] 以操作磁盘文件
  */
@@ -19,24 +17,58 @@ class KStorageFile(override val path: String) : KFile(path) {
     private val file = File(path)
 
     /**
-     * 文件输入流
+     * 打开文件输入流
+     *
+     * @return 输入流
      */
-    override val inputStream by lazy { FileInputStream(file) }
+    override fun openInputStream() =
+        ParcelFileDescriptor.AutoCloseInputStream(openFileDescriptor("r"))
 
     /**
-     * 文件输出流
+     * 打开文件输出流
+     *
+     * @param mode 写入模式
+     * - `w`: 覆盖
+     * - `a`: 追加
+     * - `t`: 截断
+     * @return 输出流
      */
-    override val outputStream by lazy { FileOutputStream(file) }
+    override fun openOutputStream(mode: String) =
+        ParcelFileDescriptor.AutoCloseOutputStream(openFileDescriptor(mode))
 
     /**
-     * 文件输入通道
+     * 打开文件输入通道
+     *
+     * @return 输入通道
      */
-    override val inputChannel by lazy { inputStream.channel!! }
+    override fun openInputChannel() = openInputStream().channel!!
 
     /**
-     * 文件输出通道
+     * 打开文件输出通道
+     *
+     * @param mode 写入模式
+     * - `w`: 覆盖
+     * - `a`: 追加
+     * - `t`: 截断
+     * @return 输出通道
      */
-    override val outputChannel by lazy { outputStream.channel!! }
+    override fun openOutputChannel(mode: String) = openOutputStream(mode).channel!!
+
+    /**
+     * 打开文件句柄
+     *
+     * @param mode 文件模式 `"r"` `"w"` `"a"` `"t"`
+     * @return 文件句柄
+     */
+    override fun openFileDescriptor(mode: String) = ParcelFileDescriptor.open(
+        file, ParcelFileDescriptor.parseMode(
+            when (mode) {
+                "a" -> "wa"
+                "t" -> "wt"
+                else -> mode
+            }
+        )
+    )!!
 
     /**
      * 检查权限

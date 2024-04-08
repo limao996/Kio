@@ -10,4 +10,13 @@
 
 [![](https://img.shields.io/badge/QQ群-884183161-0099FF?logo=tencentqq)](https://qm.qq.com/q/3aHOYecyNO)
 [![](https://img.shields.io/badge/Telegram-limao__lua-0099FF?logo=telegram)](https://t.me/limao_lua)
+
 > 项目处于开发阶段，敬请期待！
+
+## 开发进度
+
+- [x] 权限管理
+- [x] 文件读写
+- [ ] 属性查询
+- [ ] 文件目录
+- [ ] 拷贝剪切
