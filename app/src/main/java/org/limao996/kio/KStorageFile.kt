@@ -18,7 +18,7 @@ class KStorageFile(
     /**
      * 文件对象
      */
-    private val file = File(path)
+    val file = File(path)
 
     /**
      * 父目录路径
@@ -29,6 +29,16 @@ class KStorageFile(
      * 父目录对象
      */
     override val parentFile by lazy { KStorageFile(context, parent) }
+
+    /**
+     * 绝对路径
+     */
+    override val absolutePath: String = file.absolutePath
+
+    /**
+     * 文件名称
+     */
+    override val name: String = file.name
 
     /**
      * 打开下级节点
@@ -130,5 +140,27 @@ class KStorageFile(
      * @return 判断结果
      */
     override fun isDocumentFile(): Boolean = false
+
+    /**
+     * 创建子级新文件
+     *
+     * @return 结果
+     */
+    override fun createNewFile(name: String) = openFile(name).createNewFile()
+
+
+    /**
+     * 创建新文件
+     *
+     * @return 结果
+     */
+    override fun createNewFile() = file.createNewFile()
+
+    /**
+     * 创建文件夹
+     *
+     * @return 结果
+     */
+    override fun mkdir() = file.mkdir()
 
 }

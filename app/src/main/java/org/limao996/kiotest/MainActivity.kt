@@ -17,6 +17,7 @@ class MainActivity : AppCompatActivity() {
         val a = kio.open(
             getDatabasePath("test.txt").absolutePath
         )
+
         if (!a.checkPermission()) a.requestPermission()
         a.openOutputStream("t")
             .writer()
@@ -47,6 +48,7 @@ class MainActivity : AppCompatActivity() {
                     .readText()
             )
         }
+
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {

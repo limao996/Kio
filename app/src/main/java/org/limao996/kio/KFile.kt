@@ -30,6 +30,11 @@ abstract class KFile(open val path: String) {
     abstract val absolutePath: String
 
     /**
+     * 文件名称
+     */
+    abstract val name: String
+
+    /**
      * 打开下级节点
      *
      * @param path 相对路径
@@ -108,6 +113,27 @@ abstract class KFile(open val path: String) {
      * @return 判断结果
      */
     abstract fun isDocumentFile(): Boolean
+
+    /**
+     * 创建子级新文件
+     *
+     * @return 结果
+     */
+    abstract fun createNewFile(name: String): Boolean
+
+    /**
+     * 创建新文件
+     *
+     * @return 结果
+     */
+    abstract fun createNewFile(): Boolean
+
+    /**
+     * 创建文件夹
+     *
+     * @return 结果
+     */
+    abstract fun mkdir(): Boolean
 
     companion object {
         /**

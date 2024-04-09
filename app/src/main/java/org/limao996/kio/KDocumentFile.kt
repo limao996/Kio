@@ -13,7 +13,7 @@ import kotlin.random.Random
 /**
  * 根Uri
  */
-private const val RootUri = "content://com.android.externalstorage.documents/tree/primary%3A"
+private const val RootUriHeader = "content://com.android.externalstorage.documents/tree/primary%3A"
 
 /**
  * SAF权限
@@ -33,19 +33,14 @@ class KDocumentFile(
 ) : KFile(path) {
 
     /**
-     * 首页Uri
+     * 根Uri
      */
-    private val homeUri: Uri
+    val rootUri: Uri
 
     /**
      * 节点Uri
      */
-    private val nodeUri: Uri
-
-    /**
-     * 首页路径
-     */
-    private val home: String
+    val nodeUri: Uri
 
     /**
      * 内容提供者
@@ -76,18 +71,17 @@ class KDocumentFile(
         val path = formatPath(path).split('/')
 
         // 生成首页uri
-        var uri = RootUri
+        var uri = RootUriHeader
         uri += path.take(if (SDK_INT < 33) 2 else 3)
             .joinToString("%2F")
-        homeUri = Uri.parse(uri)
+        rootUri = Uri.parse(uri)
 
         // 切割路径
         val homeSplitPath = path.take(if (SDK_INT < 33) 2 else 3)
         val nodeUriHeader = homeSplitPath.joinToString("%2F")
-        home = homeSplitPath.joinToString("/")
 
         // 生成节点uri
-        uri = RootUri + nodeUriHeader
+        uri = RootUriHeader + nodeUriHeader
         uri += "/document/primary%3A"
         uri += path.joinToString("%2F")
         nodeUri = Uri.parse(uri)
@@ -104,6 +98,18 @@ class KDocumentFile(
     override val parentFile: KFile
         get() = if (isDocumentFile("sdcard/$parent")) KDocumentFile(context, parent)
         else KStorageFile(context, parent)
+
+    /**
+     * 绝对路径
+     */
+    override val absolutePath: String
+        get() = TODO("Not yet implemented")
+
+    /**
+     * 文件名称
+     */
+    override val name = formatPath(path).split('/')
+        .last()
 
     /**
      * 打开下级节点
@@ -177,7 +183,7 @@ class KDocumentFile(
         // 遍历权限
         for (permission in contentResolver.persistedUriPermissions) {
             // 判断权限
-            if (permission.isReadPermission && permission.isWritePermission && permission.uri == homeUri) {
+            if (permission.isReadPermission && permission.isWritePermission && permission.uri == rootUri) {
                 return true
             }
         }
@@ -195,7 +201,7 @@ class KDocumentFile(
         assert(context is Activity) { KioException("No Activity cannot apply for permissions") }
 
         // 获取虚拟文件id
-        val id = DocumentsContract.getTreeDocumentId(homeUri)
+        val id = DocumentsContract.getTreeDocumentId(rootUri)
         // 创建 [Intent] 对象
         val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).setFlags(
             Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION.or(
@@ -204,12 +210,12 @@ class KDocumentFile(
         )
             .putExtra(
                 "android.provider.extra.INITIAL_URI",
-                DocumentsContract.buildDocumentUriUsingTree(homeUri, id)
+                DocumentsContract.buildDocumentUriUsingTree(rootUri, id)
             )
         // 申请权限并回调
         val tag = Random.nextInt()
         Kio.registerActivityResultCallback(context) { requestCode: Int, _: Int, data: Intent? ->
-            if (requestCode == tag && homeUri == data?.data) {
+            if (requestCode == tag && rootUri == data?.data) {
                 contentResolver.takePersistableUriPermission(
                     data.data!!, data.flags and SafPermission
                 )
@@ -227,7 +233,7 @@ class KDocumentFile(
     override fun releasePermission(): Boolean {
         return try {
             contentResolver.releasePersistableUriPermission(
-                homeUri, SafPermission
+                rootUri, SafPermission
             )
             true
         } catch (e: Exception) {
@@ -240,6 +246,52 @@ class KDocumentFile(
      *
      * @return 判断结果
      */
-    override fun isDocumentFile(): Boolean = true
+    override fun isDocumentFile() = true
+
+    /**
+     * 创建子级新文件
+     *
+     * @return 结果
+     */
+    override fun createNewFile(name: String) = openFile(name).createNewFile()
+
+    /**
+     * 创建新文件
+     *
+     * @return 结果
+     */
+    override fun createNewFile() = createNewNode("*/*")
+
+    /**
+     * 创建文件夹
+     *
+     * @return 结果
+     */
+    override fun mkdir() = createNewNode("vnd.android.document/directory")
+
+    /**
+     * 创建新节点
+     *
+     * @param mimeType MIME类型
+     * @return 结果
+     */
+    private fun createNewNode(mimeType: String): Boolean {
+        return try {
+            val parentUri = (parentFile as KDocumentFile).nodeUri
+            val uri = DocumentsContract.createDocument(
+                contentResolver, parentUri, mimeType, name
+            )!!
+            val rawName = nodeUri.path?.split("/")
+                ?.last()
+            val newName = uri.path?.split("/")
+                ?.last()
+            if (rawName != newName) {
+                DocumentsContract.deleteDocument(contentResolver, uri)
+            }
+            rawName == newName
+        } catch (e: Exception) {
+            false
+        }
+    }
 
 }
