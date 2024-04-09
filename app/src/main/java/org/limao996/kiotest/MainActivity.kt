@@ -21,7 +21,7 @@ class MainActivity : AppCompatActivity() {
         a.openOutputStream("t")
             .writer()
             .apply {
-                write("测试A")
+                write("测试1")
                 close()
             }
         log(
@@ -37,7 +37,7 @@ class MainActivity : AppCompatActivity() {
             b.openOutputStream("t")
                 .writer()
                 .apply {
-                    write("测试B")
+                    write("测试2")
                     close()
                 }
             log(

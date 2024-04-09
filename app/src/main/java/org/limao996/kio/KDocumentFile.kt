@@ -93,6 +93,28 @@ class KDocumentFile(
         nodeUri = Uri.parse(uri)
     }
 
+    /**
+     * 父目录路径
+     */
+    override val parent = formatPath(path) + "/.."
+
+    /**
+     * 父目录对象
+     */
+    override val parentFile: KFile
+        get() = if (isDocumentFile("sdcard/$parent")) KDocumentFile(context, parent)
+        else KStorageFile(context, parent)
+
+    /**
+     * 打开下级节点
+     *
+     * @param path 相对路径
+     * @return [Kio] 文件对象
+     */
+    override fun openFile(path: String): KFile {
+        val newPath = formatPath(this.path) + "/" + formatPath(path)
+        return KDocumentFile(context, newPath)
+    }
 
     /**
      * 打开文件输入流

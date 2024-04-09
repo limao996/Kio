@@ -1,20 +1,46 @@
 package org.limao996.kio
 
+import android.content.Context
 import android.os.ParcelFileDescriptor
 import java.io.File
 
 /**
  * [Kio] 磁盘文件
  *
+ * @property context 应用上下文
  * @property path 文件路径
  * @constructor 创建 [KStorageFile] 以操作磁盘文件
  */
-class KStorageFile(override val path: String) : KFile(path) {
+class KStorageFile(
+    private val context: Context, override val path: String
+) : KFile(path) {
 
     /**
      * 文件对象
      */
     private val file = File(path)
+
+    /**
+     * 父目录路径
+     */
+    override val parent = file.parent!!
+
+    /**
+     * 父目录对象
+     */
+    override val parentFile by lazy { KStorageFile(context, parent) }
+
+    /**
+     * 打开下级节点
+     *
+     * @param path 相对路径
+     * @return [Kio] 文件对象
+     */
+    override fun openFile(path: String): KFile {
+        val newPath = formatPath(this.path) + "/" + formatPath(path)
+        return if (isDocumentFile(newPath)) KDocumentFile(context, toDocumentPath(newPath))
+        else KStorageFile(context, newPath)
+    }
 
     /**
      * 打开文件输入流

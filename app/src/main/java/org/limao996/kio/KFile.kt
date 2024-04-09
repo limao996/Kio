@@ -15,6 +15,29 @@ import java.nio.channels.FileChannel
 abstract class KFile(open val path: String) {
 
     /**
+     * 父目录路径
+     */
+    abstract val parent: String
+
+    /**
+     * 父目录对象
+     */
+    abstract val parentFile: KFile
+
+    /**
+     * 绝对路径
+     */
+    abstract val absolutePath: String
+
+    /**
+     * 打开下级节点
+     *
+     * @param path 相对路径
+     * @return [Kio] 文件对象
+     */
+    abstract fun openFile(path: String): KFile
+
+    /**
      * 打开文件输入流
      *
      * @return 输入流
@@ -94,6 +117,7 @@ abstract class KFile(open val path: String) {
         private val DocumentPaths = arrayOf(
             "sdcard/Android/data", "storage/emulated/0/Android/data",
             "sdcard/Android/obb", "storage/emulated/0/Android/obb",
+            "sdcard/Android/sandbox", "storage/emulated/0/Android/sandbox",
         )
 
         /**
@@ -152,7 +176,7 @@ abstract class KFile(open val path: String) {
          * @return 结果
          */
         @JvmStatic
-        private fun formatPath(path: String): String {
+        fun formatPath(path: String): String {
             var newPath = path
             // 去头
             if (newPath.startsWith("/")) {
@@ -165,4 +189,9 @@ abstract class KFile(open val path: String) {
             return newPath
         }
     }
+
+    override fun toString(): String = (this::class.simpleName ?: "KFile") + ": /" + formatPath(path)
+    override fun equals(other: Any?) =
+        other is KFile && formatPath(absolutePath) == formatPath(other.absolutePath)
+
 }

@@ -74,7 +74,7 @@ class Kio(private val context: Context) {
         if (isDocumentFile(path)) {
             return KDocumentFile(context, KFile.toDocumentPath(path)).checkPermission()
         }
-        return KStorageFile(path).checkPermission()
+        return KStorageFile(context, path).checkPermission()
     }
 
     /**
@@ -89,7 +89,7 @@ class Kio(private val context: Context) {
                 callback
             )
         }
-        return KStorageFile(path).requestPermission(callback)
+        return KStorageFile(context, path).requestPermission(callback)
     }
 
     /**
@@ -102,7 +102,7 @@ class Kio(private val context: Context) {
         if (isDocumentFile(path)) {
             return KDocumentFile(context, KFile.toDocumentPath(path)).releasePermission()
         }
-        return KStorageFile(path).releasePermission()
+        return KStorageFile(context, path).releasePermission()
     }
 
     /**
@@ -115,7 +115,7 @@ class Kio(private val context: Context) {
         if (isDocumentFile(path)) {
             return KDocumentFile(context, KFile.toDocumentPath(path))
         }
-        return KStorageFile(path)
+        return KStorageFile(context, path)
     }
 }
 
