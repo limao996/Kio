@@ -270,28 +270,32 @@ class KDocumentFile(
     override fun mkdir() = createNewNode("vnd.android.document/directory")
 
     /**
+     * 删除文件
+     *
+     * @return 结果
+     */
+    override fun delete() = DocumentsContract.deleteDocument(contentResolver, nodeUri)
+
+    /**
      * 创建新节点
      *
      * @param mimeType MIME类型
      * @return 结果
      */
     private fun createNewNode(mimeType: String): Boolean {
-        return try {
-            val parentUri = (parentFile as KDocumentFile).nodeUri
-            val uri = DocumentsContract.createDocument(
-                contentResolver, parentUri, mimeType, name
-            )!!
-            val rawName = nodeUri.path?.split("/")
-                ?.last()
-            val newName = uri.path?.split("/")
-                ?.last()
-            if (rawName != newName) {
-                DocumentsContract.deleteDocument(contentResolver, uri)
-            }
-            rawName == newName
-        } catch (e: Exception) {
-            false
+
+        val parentUri = (parentFile as KDocumentFile).nodeUri
+        val uri = DocumentsContract.createDocument(
+            contentResolver, parentUri, mimeType, name
+        )!!
+        val rawName = nodeUri.path?.split("/")
+            ?.last()
+        val newName = uri.path?.split("/")
+            ?.last()
+        if (rawName != newName) {
+            DocumentsContract.deleteDocument(contentResolver, uri)
         }
+        return rawName == newName
     }
 
 }

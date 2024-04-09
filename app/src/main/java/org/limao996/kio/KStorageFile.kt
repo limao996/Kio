@@ -163,4 +163,11 @@ class KStorageFile(
      */
     override fun mkdir() = file.mkdir()
 
+    /**
+     * 删除文件
+     *
+     * @return 结果
+     */
+    override fun delete() = file.delete()
+
 }

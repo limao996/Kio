@@ -135,6 +135,13 @@ abstract class KFile(open val path: String) {
      */
     abstract fun mkdir(): Boolean
 
+    /**
+     * 删除文件
+     *
+     * @return 结果
+     */
+    abstract fun delete(): Boolean
+
     companion object {
         /**
          * 虚拟目录列表
