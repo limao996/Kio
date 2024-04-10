@@ -41,6 +41,11 @@ class KStorageFile(
     override val name: String = file.name
 
     /**
+     * 是否为文件
+     */
+    override val isFile by lazy { file.isFile }
+
+    /**
      * 打开下级节点
      *
      * @param path 相对路径

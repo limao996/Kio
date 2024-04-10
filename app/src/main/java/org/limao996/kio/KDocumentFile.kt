@@ -113,6 +113,17 @@ class KDocumentFile(
         .last()
 
     /**
+     * 是否为文件
+     */
+    override val isFile by lazy {
+        val cursor = contentResolver.query(nodeUri, arrayOf("mime_type"), null, null, null)
+        cursor!!.moveToFirst()
+        val mimeType = cursor.getString(0)
+        cursor.close()
+        mimeType != "vnd.android.document/directory"
+    }
+
+    /**
      * 打开下级节点
      *
      * @param path 相对路径

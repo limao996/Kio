@@ -47,9 +47,6 @@ class MainActivity : AppCompatActivity() {
                     .reader()
                     .readText()
             )
-
-            log(a.absolutePath)
-            log(b.absolutePath)
         }
 
     }

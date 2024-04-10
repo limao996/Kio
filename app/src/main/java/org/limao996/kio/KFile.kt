@@ -35,6 +35,16 @@ abstract class KFile(open val path: String) {
     abstract val name: String
 
     /**
+     * 是否为文件
+     */
+    abstract val isFile: Boolean
+
+    /**
+     * 是否为文件夹
+     */
+    open val isDirectory by lazy { !isFile }
+
+    /**
      * 打开下级节点
      *
      * @param path 相对路径
