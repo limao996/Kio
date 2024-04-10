@@ -147,7 +147,7 @@ abstract class KFile(open val path: String) {
      *
      * @param file 目标文件
      */
-    fun copyTo(file: KFile) {
+    open fun copyTo(file: KFile) {
         val fis = openInputStream()
         val fos = file.openOutputStream("t")
         val fic = fis.channel
@@ -161,6 +161,16 @@ abstract class KFile(open val path: String) {
         foc.close()
         fis.close()
         fos.close()
+    }
+
+    /**
+     * 移动到目标文件
+     *
+     * @param file 目标文件
+     */
+    open fun moveTo(file: KFile) {
+        copyTo(file)
+        delete()
     }
 
     companion object {
