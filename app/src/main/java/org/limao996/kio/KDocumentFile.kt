@@ -10,6 +10,7 @@ import android.os.ParcelFileDescriptor
 import android.provider.DocumentsContract
 import kotlin.random.Random
 
+
 /**
  * 根Uri
  */
@@ -85,6 +86,7 @@ class KDocumentFile(
         uri += "/document/primary%3A"
         uri += path.joinToString("%2F")
         nodeUri = Uri.parse(uri)
+
     }
 
     /**
@@ -102,8 +104,7 @@ class KDocumentFile(
     /**
      * 绝对路径
      */
-    override val absolutePath: String
-        get() = TODO("Not yet implemented")
+    override val absolutePath = "/sdcard/" + formatPath(path)
 
     /**
      * 文件名称
@@ -283,7 +284,6 @@ class KDocumentFile(
      * @return 结果
      */
     private fun createNewNode(mimeType: String): Boolean {
-
         val parentUri = (parentFile as KDocumentFile).nodeUri
         val uri = DocumentsContract.createDocument(
             contentResolver, parentUri, mimeType, name

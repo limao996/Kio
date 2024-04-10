@@ -32,7 +32,7 @@ class MainActivity : AppCompatActivity() {
                 .readText()
         )
 
-        val b = kio.open("/sdcard/Android/data/bin.mt.plus/a.txt")
+        val b = kio.open("/sdcard/Android/data/bin.mt.plus/a.txt/../a.txt")
         if (!b.checkPermission()) b.requestPermission()
         else {
             b.openOutputStream("t")
@@ -47,6 +47,9 @@ class MainActivity : AppCompatActivity() {
                     .reader()
                     .readText()
             )
+
+            log(a.absolutePath)
+            log(b.absolutePath)
         }
 
     }
