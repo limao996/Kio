@@ -142,6 +142,27 @@ abstract class KFile(open val path: String) {
      */
     abstract fun delete(): Boolean
 
+    /**
+     * 复制到目标文件
+     *
+     * @param file 目标文件
+     */
+    fun copyTo(file: KFile) {
+        val fis = openInputStream()
+        val fos = file.openOutputStream("t")
+        val fic = fis.channel
+        val foc = fos.channel
+        val size = fic.size()
+        var left = size
+        while (left > 0) {
+            left -= fic.transferTo(size - left, left, foc)
+        }
+        fic.close()
+        foc.close()
+        fis.close()
+        fos.close()
+    }
+
     companion object {
         /**
          * 虚拟目录列表

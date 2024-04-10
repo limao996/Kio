@@ -35,7 +35,7 @@ class MainActivity : AppCompatActivity() {
         val b = kio.open("/sdcard/Android/data/bin.mt.plus/a.txt/../a.txt")
         if (!b.checkPermission()) b.requestPermission()
         else {
-            b.openOutputStream("t")
+            b.openOutputStream("a")
                 .writer()
                 .apply {
                     write("测试2")
