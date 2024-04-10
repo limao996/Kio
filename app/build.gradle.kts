@@ -9,7 +9,7 @@ android {
 
     defaultConfig {
         applicationId = "org.limao996.kio.test"
-        minSdk = 21
+        minSdk = 24
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"

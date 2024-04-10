@@ -6,10 +6,14 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build.VERSION.SDK_INT
-import android.os.ParcelFileDescriptor
+import android.os.Environment
 import android.provider.DocumentsContract
 import kotlin.random.Random
 
+/**
+ * 内置存储
+ */
+private val Sdcard = Environment.getExternalStorageDirectory().path
 
 /**
  * 根Uri
@@ -30,18 +34,18 @@ private const val SafPermission =
  * @constructor 创建 [KDocumentFile] 以操作虚拟文件
  */
 class KDocumentFile(
-    private val context: Context, override val path: String
-) : KFile(path) {
+    override val context: Context, override val path: String
+) : KFile(context, path) {
 
     /**
      * 根Uri
      */
-    val rootUri: Uri
+    private val rootUri: Uri
 
     /**
      * 节点Uri
      */
-    val nodeUri: Uri
+    private val nodeUri: Uri
 
     /**
      * 内容提供者
@@ -92,19 +96,20 @@ class KDocumentFile(
     /**
      * 父目录路径
      */
-    override val parent = formatPath(path) + "/.."
+    override val parent = "/${formatPath(path)}/.."
 
     /**
      * 父目录对象
      */
-    override val parentFile: KFile
-        get() = if (isDocumentFile("sdcard/$parent")) KDocumentFile(context, parent)
+    override val parentFile by lazy {
+        if (isDocumentFile("sdcard/$parent")) KDocumentFile(context, parent)
         else KStorageFile(context, parent)
+    }
 
     /**
      * 绝对路径
      */
-    override val absolutePath = "/sdcard/" + formatPath(path)
+    override val absolutePath = Sdcard + "/" + formatPath(path)
 
     /**
      * 文件名称
@@ -122,55 +127,6 @@ class KDocumentFile(
         cursor.close()
         mimeType != "vnd.android.document/directory"
     }
-
-    /**
-     * 打开下级节点
-     *
-     * @param path 相对路径
-     * @return [Kio] 文件对象
-     */
-    override fun openFile(path: String): KFile {
-        val newPath = formatPath(this.path) + "/" + formatPath(path)
-        return KDocumentFile(context, newPath)
-    }
-
-    /**
-     * 打开文件输入流
-     *
-     * @return 输入流
-     */
-    override fun openInputStream() =
-        ParcelFileDescriptor.AutoCloseInputStream(openFileDescriptor("r"))
-
-    /**
-     * 打开文件输出流
-     *
-     * @param mode 写入模式
-     * - `w`: 覆盖
-     * - `a`: 追加
-     * - `t`: 截断
-     * @return 输出流
-     */
-    override fun openOutputStream(mode: String) =
-        ParcelFileDescriptor.AutoCloseOutputStream(openFileDescriptor(mode))
-
-    /**
-     * 打开文件输入通道
-     *
-     * @return 输入通道
-     */
-    override fun openInputChannel() = openInputStream().channel!!
-
-    /**
-     * 打开文件输出通道
-     *
-     * @param mode 写入模式
-     * - `w`: 覆盖
-     * - `a`: 追加
-     * - `t`: 截断
-     * @return 输出通道
-     */
-    override fun openOutputChannel(mode: String) = openOutputStream(mode).channel!!
 
     /**
      * 打开文件句柄

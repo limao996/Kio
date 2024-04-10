@@ -1,18 +1,17 @@
 package org.limao996.kio
 
+import android.content.Context
 import android.os.Build.VERSION.SDK_INT
 import android.os.ParcelFileDescriptor
-import java.io.FileInputStream
-import java.io.FileOutputStream
-import java.nio.channels.FileChannel
 
 /**
  * [Kio] 文件抽象类
  *
+ * @property context 应用上下文
  * @property path 文件路径
  * @constructor 创建 [KFile] 对象以操作文件
  */
-abstract class KFile(open val path: String) {
+abstract class KFile(open val context: Context, open val path: String) {
 
     /**
      * 父目录路径
@@ -50,14 +49,18 @@ abstract class KFile(open val path: String) {
      * @param path 相对路径
      * @return [Kio] 文件对象
      */
-    abstract fun openFile(path: String): KFile
+    open fun openFile(path: String): KFile {
+        val newPath = formatPath(this.path) + "/" + formatPath(path)
+        return if (isDocumentFile(newPath)) KDocumentFile(context, toDocumentPath(newPath))
+        else KStorageFile(context, newPath)
+    }
 
     /**
      * 打开文件输入流
      *
      * @return 输入流
      */
-    abstract fun openInputStream(): FileInputStream
+    open fun openInputStream() = ParcelFileDescriptor.AutoCloseInputStream(openFileDescriptor("r"))
 
     /**
      * 打开文件输出流
@@ -68,14 +71,15 @@ abstract class KFile(open val path: String) {
      * - `t`: 截断
      * @return 输出流
      */
-    abstract fun openOutputStream(mode: String = "w"): FileOutputStream
+    open fun openOutputStream(mode: String) =
+        ParcelFileDescriptor.AutoCloseOutputStream(openFileDescriptor(mode))
 
     /**
      * 打开文件输入通道
      *
      * @return 输入通道
      */
-    abstract fun openInputChannel(): FileChannel
+    open fun openInputChannel() = openInputStream().channel!!
 
     /**
      * 打开文件输出通道
@@ -86,7 +90,8 @@ abstract class KFile(open val path: String) {
      * - `t`: 截断
      * @return 输出通道
      */
-    abstract fun openOutputChannel(mode: String = "w"): FileChannel
+    open fun openOutputChannel(mode: String) = openOutputStream(mode).channel!!
+
 
     /**
      * 打开文件句柄
@@ -267,5 +272,9 @@ abstract class KFile(open val path: String) {
     override fun toString(): String = (this::class.simpleName ?: "KFile") + ": /" + formatPath(path)
     override fun equals(other: Any?) =
         other is KFile && formatPath(absolutePath) == formatPath(other.absolutePath)
+
+    override fun hashCode(): Int {
+        return absolutePath.hashCode()
+    }
 
 }

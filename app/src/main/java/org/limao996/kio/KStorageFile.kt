@@ -12,13 +12,13 @@ import java.io.File
  * @constructor 创建 [KStorageFile] 以操作磁盘文件
  */
 class KStorageFile(
-    private val context: Context, override val path: String
-) : KFile(path) {
+    override val context: Context, override val path: String
+) : KFile(context, path) {
 
     /**
      * 文件对象
      */
-    val file = File(path)
+    private val file = File(path)
 
     /**
      * 父目录路径
@@ -44,56 +44,6 @@ class KStorageFile(
      * 是否为文件
      */
     override val isFile by lazy { file.isFile }
-
-    /**
-     * 打开下级节点
-     *
-     * @param path 相对路径
-     * @return [Kio] 文件对象
-     */
-    override fun openFile(path: String): KFile {
-        val newPath = formatPath(this.path) + "/" + formatPath(path)
-        return if (isDocumentFile(newPath)) KDocumentFile(context, toDocumentPath(newPath))
-        else KStorageFile(context, newPath)
-    }
-
-    /**
-     * 打开文件输入流
-     *
-     * @return 输入流
-     */
-    override fun openInputStream() =
-        ParcelFileDescriptor.AutoCloseInputStream(openFileDescriptor("r"))
-
-    /**
-     * 打开文件输出流
-     *
-     * @param mode 写入模式
-     * - `w`: 覆盖
-     * - `a`: 追加
-     * - `t`: 截断
-     * @return 输出流
-     */
-    override fun openOutputStream(mode: String) =
-        ParcelFileDescriptor.AutoCloseOutputStream(openFileDescriptor(mode))
-
-    /**
-     * 打开文件输入通道
-     *
-     * @return 输入通道
-     */
-    override fun openInputChannel() = openInputStream().channel!!
-
-    /**
-     * 打开文件输出通道
-     *
-     * @param mode 写入模式
-     * - `w`: 覆盖
-     * - `a`: 追加
-     * - `t`: 截断
-     * @return 输出通道
-     */
-    override fun openOutputChannel(mode: String) = openOutputStream(mode).channel!!
 
     /**
      * 打开文件句柄
