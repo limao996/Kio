@@ -8,6 +8,7 @@ import android.net.Uri
 import android.os.Build.VERSION.SDK_INT
 import android.os.Environment
 import android.provider.DocumentsContract
+import android.provider.DocumentsContract.Document
 import kotlin.random.Random
 
 /**
@@ -71,6 +72,15 @@ class KDocumentFile(
         return newPath
     }
 
+    /**
+     * 查询文件属性
+     *
+     * @param keys key列表
+     * @return 数据库光标
+     */
+    private fun query(vararg keys: String) =
+        contentResolver.query(nodeUri, keys, null, null, null)!!
+
     init {
         // 格式化并分割路径
         val path = formatPath(path).split('/')
@@ -90,7 +100,6 @@ class KDocumentFile(
         uri += "/document/primary%3A"
         uri += path.joinToString("%2F")
         nodeUri = Uri.parse(uri)
-
     }
 
     /**
@@ -102,14 +111,14 @@ class KDocumentFile(
      * 父目录对象
      */
     override val parentFile by lazy {
-        if (isDocumentFile("sdcard/$parent")) KDocumentFile(context, parent)
-        else KStorageFile(context, parent)
+        if (isDocumentFile("$Sdcard/$parent")) KDocumentFile(context, parent)
+        else KStorageFile(context, "$Sdcard/$parent")
     }
 
     /**
      * 绝对路径
      */
-    override val absolutePath = Sdcard + "/" + formatPath(path)
+    override val absolutePath = "$Sdcard/" + formatPath(path)
 
     /**
      * 文件名称
@@ -121,12 +130,49 @@ class KDocumentFile(
      * 是否为文件
      */
     override val isFile by lazy {
-        val cursor = contentResolver.query(nodeUri, arrayOf("mime_type"), null, null, null)
-        cursor!!.moveToFirst()
+        val cursor = query(Document.COLUMN_MIME_TYPE)
+        if (!cursor.moveToFirst()) {
+            return@lazy false
+        }
         val mimeType = cursor.getString(0)
         cursor.close()
-        mimeType != "vnd.android.document/directory"
+        mimeType != Document.MIME_TYPE_DIR
     }
+
+    /**
+     * 显示友好名称
+     */
+    override val displayName: String by lazy {
+        query(Document.COLUMN_DISPLAY_NAME).use {
+            it.moveToFirst()
+            it.getString(0)
+        }
+    }
+
+    /**
+     * 最后修改时间
+     */
+    override val lastModified: Long by lazy {
+        query(Document.COLUMN_LAST_MODIFIED).use {
+            it.moveToFirst()
+            it.getLong(0)
+        }
+    }
+
+    /**
+     * 文件大小
+     */
+    override val size: Long by lazy {
+        query(Document.COLUMN_SIZE).use {
+            it.moveToFirst()
+            it.getLong(0)
+        }
+    }
+
+    /**
+     * 文件Uri
+     */
+    override val uri = nodeUri
 
     /**
      * 打开文件句柄
@@ -221,7 +267,7 @@ class KDocumentFile(
      *
      * @return 结果
      */
-    override fun createNewFile(name: String) = openFile(name).createNewFile()
+    override fun createNewFile(name: String) = openSubFile(name).createNewFile()
 
     /**
      * 创建新文件
@@ -235,7 +281,7 @@ class KDocumentFile(
      *
      * @return 结果
      */
-    override fun mkdir() = createNewNode("vnd.android.document/directory")
+    override fun mkdir() = createNewNode(Document.MIME_TYPE_DIR)
 
     /**
      * 删除文件
@@ -243,6 +289,16 @@ class KDocumentFile(
      * @return 结果
      */
     override fun delete() = DocumentsContract.deleteDocument(contentResolver, nodeUri)
+
+    /**
+     * 文件是否存在
+     *
+     * @return 结果
+     */
+    override fun exists() = query(Document.COLUMN_DOCUMENT_ID).use {
+        it.count > 0
+    }
+
 
     /**
      * 创建新节点

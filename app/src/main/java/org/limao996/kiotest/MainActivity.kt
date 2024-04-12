@@ -32,7 +32,7 @@ class MainActivity : AppCompatActivity() {
                 .readText()
         )
 
-        val b = kio.open("/sdcard/Android/data/bin.mt.plus/a.txt/../a.txt")
+        val b = kio.open("/sdcard/Android/data/bin.mt.plus/a.txt")
         if (!b.checkPermission()) b.requestPermission()
         else {
             b.openOutputStream("a")

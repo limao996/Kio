@@ -1,7 +1,9 @@
 package org.limao996.kio
 
 import android.content.Context
+import android.net.Uri
 import android.os.ParcelFileDescriptor
+import androidx.core.net.toUri
 import java.io.File
 
 /**
@@ -44,6 +46,26 @@ class KStorageFile(
      * 是否为文件
      */
     override val isFile by lazy { file.isFile }
+
+    /**
+     * 显示友好名称
+     */
+    override val displayName = name
+
+    /**
+     * 最后修改时间
+     */
+    override val lastModified by lazy { file.lastModified() }
+
+    /**
+     * 文件大小
+     */
+    override val size = file.length()
+
+    /**
+     * 文件Uri
+     */
+    override val uri: Uri by lazy { file.toUri() }
 
     /**
      * 打开文件句柄
@@ -101,7 +123,7 @@ class KStorageFile(
      *
      * @return 结果
      */
-    override fun createNewFile(name: String) = openFile(name).createNewFile()
+    override fun createNewFile(name: String) = openSubFile(name).createNewFile()
 
 
     /**
@@ -124,5 +146,12 @@ class KStorageFile(
      * @return 结果
      */
     override fun delete() = file.delete()
+
+    /**
+     * 文件是否存在
+     *
+     * @return 结果
+     */
+    override fun exists() = file.exists()
 
 }

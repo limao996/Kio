@@ -1,6 +1,7 @@
 package org.limao996.kio
 
 import android.content.Context
+import android.net.Uri
 import android.os.Build.VERSION.SDK_INT
 import android.os.ParcelFileDescriptor
 
@@ -39,9 +40,40 @@ abstract class KFile(open val context: Context, open val path: String) {
     abstract val isFile: Boolean
 
     /**
+     * 显示友好名称
+     */
+    abstract val displayName: String
+
+    /**
+     * 最后修改时间
+     */
+    abstract val lastModified: Long
+
+    /**
+     * 文件大小
+     */
+    abstract val size: Long
+
+    /**
+     * 文件Uri
+     */
+    abstract val uri: Uri
+
+    /**
      * 是否为文件夹
      */
     open val isDirectory by lazy { !isFile }
+
+    /**
+     * 打开文件节点
+     *
+     * @param path 绝对路径
+     * @return [Kio] 文件对象
+     */
+    fun openFile(path: String): KFile {
+        return if (isDocumentFile(path)) KDocumentFile(context, toDocumentPath(path))
+        else KStorageFile(context, path)
+    }
 
     /**
      * 打开下级节点
@@ -49,7 +81,7 @@ abstract class KFile(open val context: Context, open val path: String) {
      * @param path 相对路径
      * @return [Kio] 文件对象
      */
-    open fun openFile(path: String): KFile {
+    open fun openSubFile(path: String): KFile {
         val newPath = formatPath(this.path) + "/" + formatPath(path)
         return if (isDocumentFile(newPath)) KDocumentFile(context, toDocumentPath(newPath))
         else KStorageFile(context, newPath)
@@ -158,7 +190,14 @@ abstract class KFile(open val context: Context, open val path: String) {
     abstract fun delete(): Boolean
 
     /**
-     * 复制到目标文件
+     * 文件是否存在
+     *
+     * @return 结果
+     */
+    abstract fun exists(): Boolean
+
+    /**
+     * 复制内容到目标文件并清空原内容
      *
      * @param file 目标文件
      */
@@ -176,16 +215,6 @@ abstract class KFile(open val context: Context, open val path: String) {
         foc.close()
         fis.close()
         fos.close()
-    }
-
-    /**
-     * 移动到目标文件
-     *
-     * @param file 目标文件
-     */
-    open fun moveTo(file: KFile) {
-        copyTo(file)
-        delete()
     }
 
     companion object {
@@ -267,6 +296,19 @@ abstract class KFile(open val context: Context, open val path: String) {
             }
             return newPath
         }
+
+        /**
+         * 打开文件节点
+         *
+         * @param path 绝对路径
+         * @return [Kio] 文件对象
+         */
+        @JvmStatic
+        fun openFile(context: Context, path: String): KFile {
+            return if (isDocumentFile(path)) KDocumentFile(context, toDocumentPath(path))
+            else KStorageFile(context, path)
+        }
+
     }
 
     override fun toString(): String = (this::class.simpleName ?: "KFile") + ": /" + formatPath(path)
