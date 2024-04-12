@@ -6,6 +6,6 @@ before_install:
   - sdk update
 install:
   - echo "Running a custom install command"
-  - ./gradlew clean install -xtest
+  #- ./gradlew clean install -xtest
 env:
   MYVAR: "custom environment variable"
