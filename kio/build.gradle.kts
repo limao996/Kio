@@ -10,6 +10,7 @@ tasks.register<Jar>("sourcesJar") {
     from(sources)
 }
 
+
 afterEvaluate {
     publishing {
         repositories {
