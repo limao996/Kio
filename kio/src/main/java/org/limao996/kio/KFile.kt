@@ -65,26 +65,14 @@ abstract class KFile(open val context: Context, open val path: String) {
     open val isDirectory by lazy { !isFile }
 
     /**
-     * 打开文件节点
-     *
-     * @param path 绝对路径
-     * @return [Kio] 文件对象
-     */
-    fun openFile(path: String): KFile {
-        return if (isDocumentFile(path)) KDocumentFile(context, toDocumentPath(path))
-        else KStorageFile(context, path)
-    }
-
-    /**
      * 打开下级节点
      *
      * @param path 相对路径
      * @return [Kio] 文件对象
      */
     open fun openSubFile(path: String): KFile {
-        val newPath = formatPath(this.path) + "/" + formatPath(path)
-        return if (isDocumentFile(newPath)) KDocumentFile(context, toDocumentPath(newPath))
-        else KStorageFile(context, newPath)
+        val target = absolutePath + "/" + formatPath(path)
+        return openFile(context, target)
     }
 
     /**
@@ -103,7 +91,7 @@ abstract class KFile(open val context: Context, open val path: String) {
      * - `t`: 截断
      * @return 输出流
      */
-    open fun openOutputStream(mode: String) =
+    open fun openOutputStream(mode: String = "w") =
         ParcelFileDescriptor.AutoCloseOutputStream(openFileDescriptor(mode))
 
     /**
@@ -122,7 +110,7 @@ abstract class KFile(open val context: Context, open val path: String) {
      * - `t`: 截断
      * @return 输出通道
      */
-    open fun openOutputChannel(mode: String) = openOutputStream(mode).channel!!
+    open fun openOutputChannel(mode: String = "w") = openOutputStream(mode).channel!!
 
 
     /**
@@ -183,6 +171,13 @@ abstract class KFile(open val context: Context, open val path: String) {
     abstract fun mkdir(): Boolean
 
     /**
+     * 重命名并打开新的节点
+     *
+     * @param name 新名称
+     */
+    abstract fun rename(name: String): KFile
+
+    /**
      * 删除文件
      *
      * @return 结果
@@ -197,11 +192,28 @@ abstract class KFile(open val context: Context, open val path: String) {
     abstract fun exists(): Boolean
 
     /**
+     * 获取子节点路径列表
+     *
+     * @return 路径列表
+     */
+    abstract fun list(): Array<String>
+
+    /**
+     * 获取子节点对象列表
+     *
+     * @return 对象列表
+     */
+    open fun listFiles() = list().map {
+        openSubFile(it)
+    }
+        .toTypedArray()
+
+    /**
      * 复制内容到目标文件并清空原内容
      *
      * @param file 目标文件
      */
-    open fun copyTo(file: KFile) {
+    open fun copyContentTo(file: KFile) {
         val fis = openInputStream()
         val fos = file.openOutputStream("t")
         val fic = fis.channel
@@ -216,6 +228,45 @@ abstract class KFile(open val context: Context, open val path: String) {
         fis.close()
         fos.close()
     }
+
+    /**
+     * 拷贝到目标节点
+     *
+     * @param target 目标节点
+     */
+    fun copyTo(target: KFile) {
+        // 复制文件
+        if (isFile) {
+            target.createNewFile()
+            copyContentTo(target)
+            return
+        }
+
+        // 创建文件夹
+        target.mkdir()
+        // 遍历文件夹并复制
+        for (path in list()) {
+            openSubFile(path).copyTo(target.openSubFile(path))
+        }
+    }
+
+
+    /**
+     * 移动到目标节点
+     *
+     * @param target 目标节点
+     */
+    fun moveTo(target: KFile) {
+        copyTo(target)
+        delete()
+    }
+
+    /**
+     * 清空文件内容
+     *
+     */
+    open fun clear() = openOutputStream("t").close()
+
 
     companion object {
         /**
@@ -296,6 +347,17 @@ abstract class KFile(open val context: Context, open val path: String) {
             }
             return newPath
         }
+
+        /**
+         * 拼接路径
+         *
+         * @param parent 父路径
+         * @param child 子路径
+         */
+        @JvmStatic
+        fun resolvePath(parent: String, child: String) =
+            formatPath(parent) + "/" + formatPath(child)
+
 
         /**
          * 打开文件节点

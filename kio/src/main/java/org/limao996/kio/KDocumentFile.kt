@@ -111,8 +111,8 @@ class KDocumentFile(
      * 父目录对象
      */
     override val parentFile by lazy {
-        if (isDocumentFile("$Sdcard/$parent")) KDocumentFile(context, parent)
-        else KStorageFile(context, "$Sdcard/$parent")
+        if (isDocumentFile("$Sdcard$parent")) KDocumentFile(context, parent)
+        else KStorageFile(context, "$Sdcard$parent")
     }
 
     /**
@@ -284,6 +284,16 @@ class KDocumentFile(
     override fun mkdir() = createNewNode(Document.MIME_TYPE_DIR)
 
     /**
+     * 重命名并打开新的节点
+     *
+     * @param name 新名称
+     */
+    override fun rename(name: String): KDocumentFile {
+        DocumentsContract.renameDocument(context.contentResolver, nodeUri, name)
+        return KDocumentFile(context, resolvePath(parent, name))
+    }
+
+    /**
      * 删除文件
      *
      * @return 结果
@@ -295,8 +305,36 @@ class KDocumentFile(
      *
      * @return 结果
      */
-    override fun exists() = query(Document.COLUMN_DOCUMENT_ID).use {
-        it.count > 0
+    override fun exists() = try {
+        query(Document.COLUMN_DOCUMENT_ID).use {
+            it.count > 0
+        }
+    } catch (e: Exception) {
+        false
+    }
+
+    /**
+     * 获取子节点路径列表
+     *
+     * @return 路径列表
+     */
+    override fun list(): Array<String> {
+        val id = DocumentsContract.getDocumentId(nodeUri)
+        val tree = DocumentsContract.buildChildDocumentsUriUsingTree(nodeUri, id)
+        return contentResolver.query(
+            tree, arrayOf(Document.COLUMN_DOCUMENT_ID), null, null, null
+        )
+            .use {
+                val list = ArrayList<String>()
+                while (it!!.moveToNext()) {
+                    list.add(
+                        it.getString(0)
+                            .split('/')
+                            .last()
+                    )
+                }
+                list.toTypedArray()
+            }
     }
 
 
@@ -307,18 +345,12 @@ class KDocumentFile(
      * @return 结果
      */
     private fun createNewNode(mimeType: String): Boolean {
+        if (exists()) return false
         val parentUri = (parentFile as KDocumentFile).nodeUri
-        val uri = DocumentsContract.createDocument(
+        DocumentsContract.createDocument(
             contentResolver, parentUri, mimeType, name
         )!!
-        val rawName = nodeUri.path?.split("/")
-            ?.last()
-        val newName = uri.path?.split("/")
-            ?.last()
-        if (rawName != newName) {
-            DocumentsContract.deleteDocument(contentResolver, uri)
-        }
-        return rawName == newName
+        return true
     }
 
 }

@@ -1,8 +1,7 @@
 # Kio
 
 [![](https://img.shields.io/github/license/limao996/Kio.svg)]()
-[![](https://img.shields.io/github/v/tag/limao996/Kio?color=0969DA&label=发行版&logo=github)](https://github.com/limao996/Kio/releases)
-[![](https://img.shields.io/github/v/tag/limao996/Kio?color=C71D23&label=发行版&logo=gitee)](https://gitee.com/limao996/Kio/releases)
+[![](https://jitpack.io/v/limao996/Kio.svg)](https://jitpack.io/#limao996/Kio)
 
 [![](https://img.shields.io/badge/Github-仓库-0969DA?logo=github)](https://github.com/limao996/Kio)
 [![](https://img.shields.io/badge/Gitee-仓库-C71D23?logo=gitee)](https://gitee.com/limao996/Kio)
@@ -11,13 +10,24 @@
 [![](https://img.shields.io/badge/QQ群-884183161-0099FF?logo=tencentqq)](https://qm.qq.com/q/3aHOYecyNO)
 [![](https://img.shields.io/badge/Telegram-limao__lua-0099FF?logo=telegram)](https://t.me/limao_lua)
 
-> 项目处于开发阶段，敬请期待！
+## 导入依赖
 
-## 开发进度
+将其添加到根目录的 `build.gradle.kts` 文件中
 
-- [x] 权限管理
-- [x] 文件读写
-- [x] 文件创建
-- [x] 属性查询
-- [ ] 文件目录
-- [x] 拷贝剪切
+```kotlin
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        mavenCentral()
+        maven("https://jitpack.io")
+    }
+}
+```
+
+在项目 `build.gradle.kts` 添加依赖
+
+```kotlin
+dependencies {
+    implementation("com.github.limao996:Kio:$Tag")
+}
+```
