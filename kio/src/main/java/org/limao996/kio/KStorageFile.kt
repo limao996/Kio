@@ -20,7 +20,7 @@ class KStorageFile(
     /**
      * 文件对象
      */
-    private val file = File(path)
+    val file = File(path)
 
     /**
      * 父目录路径
@@ -141,6 +141,17 @@ class KStorageFile(
     override fun mkdir() = file.mkdir()
 
     /**
+     * 重命名并打开新的节点
+     *
+     * @param name 新名称
+     */
+    override fun rename(name: String): KStorageFile {
+        val path = resolvePath(parent, name)
+        file.renameTo(File(path))
+        return KStorageFile(context, path)
+    }
+
+    /**
      * 删除文件
      *
      * @return 结果
@@ -153,5 +164,12 @@ class KStorageFile(
      * @return 结果
      */
     override fun exists() = file.exists()
+
+    /**
+     * 获取子节点路径列表
+     *
+     * @return 路径列表
+     */
+    override fun list(): Array<String> = file.list()!!
 
 }
