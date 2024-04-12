@@ -12,6 +12,9 @@ tasks.register<Jar>("sourcesJar") {
 
 afterEvaluate {
     publishing {
+        repositories {
+            mavenLocal()
+        }
         publications {
             version = "1.0.0"
             create<MavenPublication>("product") {
@@ -19,8 +22,6 @@ afterEvaluate {
                 groupId = "org.limao996.kio"
                 artifactId = "Kio"
                 version = version
-                artifact(tasks["sourcesJar"])
-
                 pom {
                     name.set("Kio")
                     url.set("https://github.com/limao996/Kio")
@@ -31,11 +32,12 @@ afterEvaluate {
                         }
                     }
                 }
+                artifact(tasks["sourcesJar"])
+                afterEvaluate { artifact(tasks.getByName("bundleReleaseAar")) }
             }
         }
     }
 }
-
 
 android {
     namespace = "org.limao996.kio"
