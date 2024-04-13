@@ -4,6 +4,9 @@ plugins {
     id("maven-publish")
 }
 
+group = "org.limao996.kio"
+version = "1.0.0"
+
 android {
     namespace = "org.limao996.kio"
     compileSdk = 34
@@ -36,4 +39,17 @@ android {
 
 dependencies {
     implementation("androidx.core:core-ktx:1.12.0")
+}
+
+afterEvaluate {
+    publishing {
+        publications {
+            create("release", MavenPublication::class) {
+                from(components["release"])
+                groupId = "org.limao996.kio"
+                artifactId = "kio"
+                version = "1.0.0"
+            }
+        }
+    }
 }
