@@ -40,16 +40,3 @@ android {
 dependencies {
     implementation("androidx.core:core-ktx:1.12.0")
 }
-
-afterEvaluate {
-    publishing {
-        publications {
-            create("release", MavenPublication::class) {
-                from(components["release"])
-                groupId = "org.limao996.kio"
-                artifactId = "kio"
-                version = "1.0.0"
-            }
-        }
-    }
-}
