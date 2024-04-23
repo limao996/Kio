@@ -40,7 +40,7 @@ android {
 }
 
 dependencies {
-    implementation(project(":kio"))
+    implementation("com.github.limao996:Kio:v1.0.0")
     api("androidx.core:core-ktx:1.12.0")
     api("androidx.appcompat:appcompat:1.6.1")
     api("com.google.android.material:material:1.11.0")

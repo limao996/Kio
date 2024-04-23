@@ -28,6 +28,6 @@ dependencyResolutionManagement {
 
 ```kotlin
 dependencies {
-    implementation("com.github.limao996:Kio:$Tag")
+    implementation("com.github.limao996:Kio:1.0.0")
 }
 ```
