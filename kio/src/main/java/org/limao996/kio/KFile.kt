@@ -175,7 +175,7 @@ abstract class KFile(open val context: Context, open val path: String) {
      *
      * @param name 新名称
      */
-    abstract fun rename(name: String): KFile
+    abstract fun renameTo(name: String): KFile
 
     /**
      * 删除文件

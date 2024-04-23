@@ -4,7 +4,7 @@ plugins {
     id("maven-publish")
 }
 
-group = "org.limao996.kio"
+group = "org.limao996"
 version = "1.0.0"
 
 android {
@@ -33,10 +33,27 @@ android {
         jvmTarget = "11"
     }
     publishing {
-        singleVariant("release")
+        singleVariant("release") {
+            withSourcesJar()
+            withJavadocJar()
+        }
     }
 }
 
 dependencies {
     implementation("androidx.core:core-ktx:1.12.0")
+}
+
+publishing {
+    publications {
+        register<MavenPublication>("release") {
+            groupId = "com.github.limao996"
+            artifactId = "Kio"
+            version = "1.0.0"
+
+            afterEvaluate {
+                from(components["release"])
+            }
+        }
+    }
 }

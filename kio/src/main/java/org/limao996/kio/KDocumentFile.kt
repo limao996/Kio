@@ -288,7 +288,7 @@ class KDocumentFile(
      *
      * @param name 新名称
      */
-    override fun rename(name: String): KDocumentFile {
+    override fun renameTo(name: String): KDocumentFile {
         DocumentsContract.renameDocument(context.contentResolver, nodeUri, name)
         return KDocumentFile(context, resolvePath(parent, name))
     }

@@ -145,7 +145,7 @@ class KStorageFile(
      *
      * @param name 新名称
      */
-    override fun rename(name: String): KStorageFile {
+    override fun renameTo(name: String): KStorageFile {
         val path = resolvePath(parent, name)
         file.renameTo(File(path))
         return KStorageFile(context, path)

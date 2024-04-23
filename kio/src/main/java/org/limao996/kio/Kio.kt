@@ -66,47 +66,6 @@ class Kio(private val context: Context) {
     }
 
     /**
-     * 检查权限
-     *
-     * @param path 路径
-     * @return 权限是否完整
-     */
-    fun checkPermission(path: String): Boolean {
-        if (isDocumentFile(path)) {
-            return KDocumentFile(context, KFile.toDocumentPath(path)).checkPermission()
-        }
-        return KStorageFile(context, path).checkPermission()
-    }
-
-    /**
-     * 请求权限
-     *
-     * @param path 路径
-     * @param callback 请求权限回调，返回请求结果
-     */
-    fun requestPermission(path: String, callback: (Boolean) -> Unit) {
-        if (isDocumentFile(path)) {
-            return KDocumentFile(context, KFile.toDocumentPath(path)).requestPermission(
-                callback
-            )
-        }
-        return KStorageFile(context, path).requestPermission(callback)
-    }
-
-    /**
-     * 释放权限
-     *
-     * @param path 路径
-     * @return 是否释放成功
-     */
-    fun releasePermission(path: String): Boolean {
-        if (isDocumentFile(path)) {
-            return KDocumentFile(context, KFile.toDocumentPath(path)).releasePermission()
-        }
-        return KStorageFile(context, path).releasePermission()
-    }
-
-    /**
      * 判断是否为虚拟文件并获取对应 [KFile] 对象
      *
      * @param path 路径
@@ -118,6 +77,32 @@ class Kio(private val context: Context) {
         }
         return KStorageFile(context, path)
     }
+
+    /**
+     * 检查权限
+     *
+     * @param path 路径
+     * @return 权限是否完整
+     */
+    fun checkPermission(path: String) = open(path).checkPermission()
+
+    /**
+     * 请求权限
+     *
+     * @param path 路径
+     * @param callback 请求权限回调，返回请求结果
+     */
+    fun requestPermission(path: String, callback: (Boolean) -> Unit) =
+        open(path).requestPermission(callback)
+
+    /**
+     * 释放权限
+     *
+     * @param path 路径
+     * @return 是否释放成功
+     */
+    fun releasePermission(path: String) = open(path).releasePermission()
+
 
     /**
      * 创建新文件
@@ -359,7 +344,7 @@ class Kio(private val context: Context) {
      * @param name 新名称
      */
     fun rename(path: String, name: String) {
-        open(path).rename(name)
+        open(path).renameTo(name)
     }
 }
 
