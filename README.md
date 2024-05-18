@@ -30,7 +30,7 @@ dependencyResolutionManagement {
 
 ```kotlin
 dependencies {
-    implementation("com.github.limao996:Kio:1.1.0")
+    implementation("com.github.limao996:Kio:1.1.1")
 }
 ```
 
