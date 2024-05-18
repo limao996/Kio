@@ -224,7 +224,7 @@ abstract class KFile(open val context: Context) {
      *
      * @param callback 回调，返回是否拥有权限
      */
-    open fun checkOrRequestPermission(callback: (Boolean) -> Unit = {}) {
+    open fun checkAndRequestPermission(callback: (Boolean) -> Unit = {}) {
         if (checkPermission()) callback(true)
         else requestPermission(callback)
     }

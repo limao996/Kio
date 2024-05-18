@@ -13,7 +13,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
 
         val a = kio.open("/sdcard/test.txt")
-        a.checkOrRequestPermission {
+        a.checkAndRequestPermission {
             a.createNewFile()
             a.openOutputStream("t").writer().use {
                 it.write("测试1")
@@ -21,9 +21,9 @@ class MainActivity : AppCompatActivity() {
             log(
                 "A", a.openInputStream().reader().readText()
             )
-
+            
             val b = kio.open("/sdcard/Android/data/bin.mt.plus/a.txt")
-            b.checkOrRequestPermission {
+            b.checkAndRequestPermission {
                 b.createNewFile()
                 a.copyContentTo(b)
                 b.openOutputStream("a").writer().use {
