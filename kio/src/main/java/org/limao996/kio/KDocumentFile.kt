@@ -6,15 +6,9 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build.VERSION.SDK_INT
-import android.os.Environment
 import android.provider.DocumentsContract
 import android.provider.DocumentsContract.Document
 import kotlin.random.Random
-
-/**
- * 内置存储
- */
-private val Sdcard = Environment.getExternalStorageDirectory().path
 
 /**
  * 根Uri
@@ -36,12 +30,12 @@ private const val SafPermission =
  */
 class KDocumentFile(
     override val context: Context, override val path: String
-) : KFile(context, path) {
+) : KFile(context) {
 
     /**
-     * 根Uri
+     * 目录Uri
      */
-    private val rootUri: Uri
+    private val treeUri: Uri
 
     /**
      * 节点Uri
@@ -85,22 +79,28 @@ class KDocumentFile(
         // 格式化并分割路径
         val path = formatPath(path).split('/')
 
-        // 生成首页uri
-        var uri = RootUriHeader
-        uri += path.take(if (SDK_INT < 33) 2 else 3)
-            .joinToString("%2F")
-        rootUri = Uri.parse(uri)
+        // 生成uri字符串
+        var node = RootUriHeader
+        node += path.take(if (SDK_INT < 33) 2 else 3).joinToString("%2F")
+        treeUri = Uri.parse(node)
 
         // 切割路径
-        val homeSplitPath = path.take(if (SDK_INT < 33) 2 else 3)
-        val nodeUriHeader = homeSplitPath.joinToString("%2F")
+        val treeSplitPath = path.take(if (SDK_INT < 33) 2 else 3)
+        val nodeUriHeader = treeSplitPath.joinToString("%2F")
 
         // 生成节点uri
-        uri = RootUriHeader + nodeUriHeader
-        uri += "/document/primary%3A"
-        uri += path.joinToString("%2F")
-        nodeUri = Uri.parse(uri)
+        node = RootUriHeader + nodeUriHeader
+        node += "/document/primary%3A"
+        node += path.joinToString("%2F")
+        nodeUri = Uri.parse(node)
     }
+
+    /**
+     * [KFile] 类型
+     *
+     * @return 类型枚举对象
+     */
+    override val type = Type.DOCUMENT
 
     /**
      * 父目录路径
@@ -111,7 +111,7 @@ class KDocumentFile(
      * 父目录对象
      */
     override val parentFile by lazy {
-        if (isDocumentFile("$Sdcard$parent")) KDocumentFile(context, parent)
+        if (getType("$Sdcard$parent") == Type.DOCUMENT) KDocumentFile(context, parent)
         else KStorageFile(context, "$Sdcard$parent")
     }
 
@@ -123,8 +123,7 @@ class KDocumentFile(
     /**
      * 文件名称
      */
-    override val name = formatPath(path).split('/')
-        .last()
+    override val name = formatPath(path).split('/').last()
 
     /**
      * 是否为文件
@@ -197,7 +196,7 @@ class KDocumentFile(
         // 遍历权限
         for (permission in contentResolver.persistedUriPermissions) {
             // 判断权限
-            if (permission.isReadPermission && permission.isWritePermission && permission.uri == rootUri) {
+            if (permission.isReadPermission && permission.isWritePermission && permission.uri == treeUri) {
                 return true
             }
         }
@@ -215,21 +214,20 @@ class KDocumentFile(
         assert(context is Activity) { KioException("No Activity cannot apply for permissions") }
 
         // 获取虚拟文件id
-        val id = DocumentsContract.getTreeDocumentId(rootUri)
+        val id = DocumentsContract.getTreeDocumentId(treeUri)
         // 创建 [Intent] 对象
         val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).setFlags(
             Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION.or(
                 Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION
             ) or Intent.FLAG_GRANT_PREFIX_URI_PERMISSION
+        ).putExtra(
+            "android.provider.extra.INITIAL_URI",
+            DocumentsContract.buildDocumentUriUsingTree(treeUri, id)
         )
-            .putExtra(
-                "android.provider.extra.INITIAL_URI",
-                DocumentsContract.buildDocumentUriUsingTree(rootUri, id)
-            )
         // 申请权限并回调
         val tag = Random.nextInt()
         Kio.registerActivityResultCallback(context) { requestCode: Int, _: Int, data: Intent? ->
-            if (requestCode == tag && rootUri == data?.data) {
+            if (requestCode == tag && treeUri == data?.data) {
                 contentResolver.takePersistableUriPermission(
                     data.data!!, data.flags and SafPermission
                 )
@@ -247,20 +245,13 @@ class KDocumentFile(
     override fun releasePermission(): Boolean {
         return try {
             contentResolver.releasePersistableUriPermission(
-                rootUri, SafPermission
+                treeUri, SafPermission
             )
             true
         } catch (e: Exception) {
             false
         }
     }
-
-    /**
-     * 是否为虚拟文件
-     *
-     * @return 判断结果
-     */
-    override fun isDocumentFile() = true
 
     /**
      * 创建子级新文件
@@ -323,18 +314,15 @@ class KDocumentFile(
         val tree = DocumentsContract.buildChildDocumentsUriUsingTree(nodeUri, id)
         return contentResolver.query(
             tree, arrayOf(Document.COLUMN_DOCUMENT_ID), null, null, null
-        )
-            .use {
-                val list = ArrayList<String>()
-                while (it!!.moveToNext()) {
-                    list.add(
-                        it.getString(0)
-                            .split('/')
-                            .last()
-                    )
-                }
-                list.toTypedArray()
+        ).use {
+            val list = ArrayList<String>()
+            while (it!!.moveToNext()) {
+                list.add(
+                    it.getString(0).split('/').last()
+                )
             }
+            list.toTypedArray()
+        }
     }
 
 
