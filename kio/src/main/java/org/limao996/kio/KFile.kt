@@ -412,11 +412,11 @@ abstract class KFile(open val context: Context) {
          * @return [Kio] 文件对象
          */
         @JvmStatic
-        fun openFile(context: Context, path: String): KFile {
-            return if (getType(path) == Type.STORAGE) KStorageFile(context, path)
+        fun openFile(context: Context, path: String) =
+            if (getType(path) == Type.STORAGE) KStorageFile(context, path)
             else if (useBypassSaf and canBypassSaf) KStorageFile(context, toBypassSafPath(path))
             else KDocumentFile(context, toDocumentPath(path))
-        }
+
 
         /**
          * 打开文件节点
