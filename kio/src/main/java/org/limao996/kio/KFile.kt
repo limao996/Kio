@@ -224,7 +224,7 @@ abstract class KFile(open val context: Context) {
      *
      * @param callback 回调，返回是否拥有权限
      */
-    open fun checkOrRequestPermission(callback: (Boolean) -> Unit = {}) {
+    open fun checkAndRequestPermission(callback: (Boolean) -> Unit = {}) {
         if (checkPermission()) callback(true)
         else requestPermission(callback)
     }
@@ -416,7 +416,6 @@ abstract class KFile(open val context: Context) {
             return if (getType(path) == Type.STORAGE) KStorageFile(context, path)
             else if (useBypassSaf and canBypassSaf) KStorageFile(context, toBypassSafPath(path))
             else KDocumentFile(context, toDocumentPath(path))
-
         }
 
         /**
@@ -442,7 +441,7 @@ abstract class KFile(open val context: Context) {
          */
         @JvmStatic
         val canBypassSaf by lazy {
-            File("$Sdcard/Android\u200d/data").canRead()
+            File("/sdcard/Android\u200d/data").canRead()
         }
 
         /**

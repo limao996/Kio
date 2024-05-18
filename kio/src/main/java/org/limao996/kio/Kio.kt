@@ -130,8 +130,8 @@ class Kio(private val context: Context) {
      *
      * @param callback 回调，返回是否拥有权限
      */
-    fun checkOrRequestPermission(path: String, callback: (Boolean) -> Unit) =
-        open(path).checkOrRequestPermission(callback)
+    fun checkAndRequestPermission(path: String, callback: (Boolean) -> Unit) =
+        open(path).checkAndRequestPermission(callback)
 
 
     /**

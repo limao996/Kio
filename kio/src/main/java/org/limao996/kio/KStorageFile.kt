@@ -148,7 +148,7 @@ class KStorageFile(
      *
      * @return 是否释放成功
      */
-    override fun releasePermission() = file.setReadable(false) && file.setWritable(false)
+    override fun releasePermission() = TODO("Not yet implemented")
 
     /**
      * 创建子级新文件
