@@ -13,7 +13,7 @@ android {
         minSdk = 24
         targetSdk = 34
         versionCode = 1
-        versionName = "1.0"
+        versionName = "1.1.0"
     }
 
     buildTypes {
@@ -35,7 +35,7 @@ android {
 
 dependencies {
     implementation(project(":kio"))
-    api("androidx.core:core-ktx:1.13.0")
+    api("androidx.core:core-ktx:1.13.1")
     api("androidx.appcompat:appcompat:1.6.1")
-    api("com.google.android.material:material:1.11.0")
+    api("com.google.android.material:material:1.12.0")
 }

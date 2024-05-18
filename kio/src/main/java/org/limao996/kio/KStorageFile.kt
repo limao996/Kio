@@ -1,26 +1,43 @@
 package org.limao996.kio
 
+import android.Manifest
+import android.app.Activity
 import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
+import android.os.Environment
 import android.os.ParcelFileDescriptor
+import android.provider.Settings
 import androidx.core.net.toUri
 import java.io.File
+import kotlin.random.Random
 
 /**
  * [Kio] 磁盘文件
  *
  * @property context 应用上下文
- * @property path 文件路径
+ * @property file 文件对象
  * @constructor 创建 [KStorageFile] 以操作磁盘文件
  */
 class KStorageFile(
-    override val context: Context, override val path: String
-) : KFile(context, path) {
+    override val context: Context, val file: File
+) : KFile(context) {
+
+    constructor(context: Context, path: String) : this(context, File(path))
 
     /**
-     * 文件对象
+     * 文件路径
      */
-    val file = File(path)
+    override val path: String = file.path
+
+    /**
+     * [KFile] 类型
+     *
+     * @return 类型枚举对象
+     */
+    override val type = Type.STORAGE
 
     /**
      * 父目录路径
@@ -88,9 +105,11 @@ class KStorageFile(
      *
      * @return 权限是否完整
      */
-    override fun checkPermission(): Boolean {
-        return file.canRead() && file.canWrite()
-    }
+    override fun checkPermission() = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+        Environment.isExternalStorageManager()
+    } else (context.checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) and (context.checkSelfPermission(
+        Manifest.permission.READ_EXTERNAL_STORAGE
+    ) == PackageManager.PERMISSION_GRANTED)
 
 
     /**
@@ -99,9 +118,29 @@ class KStorageFile(
      * @param callback 请求权限回调，返回请求结果
      */
     override fun requestPermission(callback: (Boolean) -> Unit) {
-        callback(
-            file.setReadable(true) && file.setWritable(true)
-        )
+        // 限制上下文必须是 [Activity]
+        assert(context is Activity) { KioException("No Activity cannot apply for permissions") }
+
+        // 注册回调
+        val tag = Random.nextInt()
+        Kio.registerActivityResultCallback(context) { requestCode: Int, _: Int, _: Intent? ->
+            if (requestCode == tag) {
+                callback(checkPermission())
+            } else callback(false)
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION)
+            intent.setData(Uri.parse("package:" + context.packageName))
+            (context as Activity).startActivityForResult(intent, tag)
+        } else {
+            (context as Activity).requestPermissions(
+                arrayOf(
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                    Manifest.permission.READ_EXTERNAL_STORAGE
+                ), tag
+            )
+        }
     }
 
     /**
@@ -110,13 +149,6 @@ class KStorageFile(
      * @return 是否释放成功
      */
     override fun releasePermission() = file.setReadable(false) && file.setWritable(false)
-
-    /**
-     * 是否为虚拟文件
-     *
-     * @return 判断结果
-     */
-    override fun isDocumentFile(): Boolean = false
 
     /**
      * 创建子级新文件

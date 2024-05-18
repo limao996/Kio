@@ -2,6 +2,8 @@ package org.limao996.kio
 
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
+import java.io.File
 import java.nio.charset.Charset
 import java.util.WeakHashMap
 
@@ -46,6 +48,22 @@ class Kio(private val context: Context) {
             WeakHashMap<Context, ArrayList<OnActivityResultCallback>>()
 
         /**
+         * 是否支持绕过Saf
+         */
+        val canBypassSaf: Boolean
+            get() = KFile.canBypassSaf
+
+
+        /**
+         * 是否绕过Saf
+         */
+        var useBypassSaf: Boolean
+            get() = KFile.useBypassSaf
+            set(value) {
+                KFile.useBypassSaf = value
+            }
+
+        /**
          * 注册 `onActivityResult` 回调
          *
          * @param context 应用上下文
@@ -57,12 +75,12 @@ class Kio(private val context: Context) {
         }
 
         /**
-         * 是否为虚拟文件
+         * [KFile] 类型
          *
          * @param path 路径
          */
         @JvmStatic
-        fun isDocumentFile(path: String) = KFile.isDocumentFile(path)
+        fun getType(path: String) = KFile.getType(path)
     }
 
     /**
@@ -71,12 +89,23 @@ class Kio(private val context: Context) {
      * @param path 路径
      * @return [KFile] 对象
      */
-    fun open(path: String): KFile {
-        if (isDocumentFile(path)) {
-            return KDocumentFile(context, KFile.toDocumentPath(path))
-        }
-        return KStorageFile(context, path)
-    }
+    fun open(path: String) = KFile.openFile(context, path)
+
+    /**
+     * 打开 [KUriFile] 对象
+     *
+     * @param uri 文件 [Uri]
+     * @return [KUriFile] 对象
+     */
+    fun open(uri: Uri) = KFile.openFile(context, uri)
+
+    /**
+     * 打开 [KStorageFile] 对象
+     *
+     * @param file 文件 [File]
+     * @return [KUriFile] 对象
+     */
+    fun open(file: File) = KFile.openFile(context, file)
 
     /**
      * 检查权限
@@ -94,6 +123,16 @@ class Kio(private val context: Context) {
      */
     fun requestPermission(path: String, callback: (Boolean) -> Unit) =
         open(path).requestPermission(callback)
+
+
+    /**
+     * 检查或请求权限
+     *
+     * @param callback 回调，返回是否拥有权限
+     */
+    fun checkOrRequestPermission(path: String, callback: (Boolean) -> Unit) =
+        open(path).checkOrRequestPermission(callback)
+
 
     /**
      * 释放权限

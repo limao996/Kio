@@ -3,16 +3,35 @@ package org.limao996.kio
 import android.content.Context
 import android.net.Uri
 import android.os.Build.VERSION.SDK_INT
+import android.os.Environment
 import android.os.ParcelFileDescriptor
+import java.io.File
+
+/**
+ * 内置存储
+ */
+val Sdcard: String = Environment.getExternalStorageDirectory().path
 
 /**
  * [Kio] 文件抽象类
  *
  * @property context 应用上下文
- * @property path 文件路径
  * @constructor 创建 [KFile] 对象以操作文件
  */
-abstract class KFile(open val context: Context, open val path: String) {
+abstract class KFile(open val context: Context) {
+
+    /**
+     * 文件路径
+     */
+    abstract val path: String
+
+    /**
+     * [KFile] 类型
+     *
+     * @return 类型枚举对象
+     */
+    abstract val type: Type
+
 
     /**
      * 父目录路径
@@ -143,13 +162,6 @@ abstract class KFile(open val context: Context, open val path: String) {
     abstract fun releasePermission(): Boolean
 
     /**
-     * 是否为虚拟文件
-     *
-     * @return 判断结果
-     */
-    abstract fun isDocumentFile(): Boolean
-
-    /**
      * 创建子级新文件
      *
      * @return 结果
@@ -205,8 +217,17 @@ abstract class KFile(open val context: Context, open val path: String) {
      */
     open fun listFiles() = list().map {
         openSubFile(it)
+    }.toTypedArray()
+
+    /**
+     * 检查或请求权限
+     *
+     * @param callback 回调，返回是否拥有权限
+     */
+    open fun checkOrRequestPermission(callback: (Boolean) -> Unit = {}) {
+        if (checkPermission()) callback(true)
+        else requestPermission(callback)
     }
-        .toTypedArray()
 
     /**
      * 复制内容到目标文件并清空原内容
@@ -280,30 +301,38 @@ abstract class KFile(open val context: Context, open val path: String) {
         )
 
         /**
-         * 是否为虚拟文件
+         * [KFile] 类型
          *
          * @param file [Kio] 文件对象
          */
         @JvmStatic
-        fun isDocumentFile(file: KFile) = file.isDocumentFile()
+        fun getType(file: KFile) = file.type
 
         /**
-         * 是否为虚拟文件
+         * [KFile] 类型
          *
          * @param path 文件路径
          */
         @JvmStatic
-        fun isDocumentFile(path: String): Boolean {
+        fun getType(path: String): Type {
             // 低版本不需要 `Saf`
-            if (SDK_INT < 30) return false
+            if (SDK_INT < 30) return Type.STORAGE
             // 遍历匹配并判断
             for (doc in DocumentPaths) {
                 if (formatPath(path).startsWith(doc, true)) {
-                    return true
+                    return Type.DOCUMENT
                 }
             }
-            return false
+            return Type.STORAGE
         }
+
+        /**
+         * [KFile] 类型
+         *
+         * @param uri 文件Uri
+         */
+        @JvmStatic
+        fun getType(uri: Uri) = Type.URI
 
         /**
          * 将绝对路径转换为虚拟路径
@@ -319,9 +348,7 @@ abstract class KFile(open val context: Context, open val path: String) {
             for (doc in DocumentPaths) {
                 if (rawPath.startsWith(doc, true)) {
                     // 截取路径
-                    val header = doc.split('/')
-                        .takeLast(2)
-                        .joinToString("/")
+                    val header = doc.split('/').takeLast(2).joinToString("/")
                     return "$header/" + rawPath.drop(doc.length + 1)
                 }
             }
@@ -358,6 +385,25 @@ abstract class KFile(open val context: Context, open val path: String) {
         fun resolvePath(parent: String, child: String) =
             formatPath(parent) + "/" + formatPath(child)
 
+        /**
+         * 将绕过 `Saf` 的特殊字符添加给绝对路径
+         *
+         * @param path 绝对路径
+         */
+        @JvmStatic
+        private fun toBypassSafPath(path: String): String {
+            // 格式化路径
+            val rawPath = formatPath(path)
+            // 遍历匹配
+            for (doc in DocumentPaths) {
+                if (rawPath.startsWith(doc, true)) {
+                    val head = rawPath.take(doc.length - 1)
+                    val body = rawPath.drop(doc.length - 1)
+                    return "$head\u200d$body"
+                }
+            }
+            return rawPath
+        }
 
         /**
          * 打开文件节点
@@ -367,10 +413,43 @@ abstract class KFile(open val context: Context, open val path: String) {
          */
         @JvmStatic
         fun openFile(context: Context, path: String): KFile {
-            return if (isDocumentFile(path)) KDocumentFile(context, toDocumentPath(path))
-            else KStorageFile(context, path)
+            return if (getType(path) == Type.STORAGE) KStorageFile(context, path)
+            else if (useBypassSaf and canBypassSaf) KStorageFile(context, toBypassSafPath(path))
+            else KDocumentFile(context, toDocumentPath(path))
+
         }
 
+        /**
+         * 打开文件节点
+         *
+         * @param uri 文件 [Uri]
+         * @return [Kio] 文件对象
+         */
+        @JvmStatic
+        fun openFile(context: Context, uri: Uri) = KUriFile(context, uri)
+
+        /**
+         * 打开文件节点
+         *
+         * @param file 文件 [File]
+         * @return [Kio] 文件对象
+         */
+        @JvmStatic
+        fun openFile(context: Context, file: File) = KStorageFile(context, file)
+
+        /**
+         * 是否支持绕过Saf
+         */
+        @JvmStatic
+        val canBypassSaf by lazy {
+            File("$Sdcard/Android\u200d/data").canRead()
+        }
+
+        /**
+         * 是否绕过Saf
+         */
+        @JvmStatic
+        var useBypassSaf = true
     }
 
     override fun toString(): String = (this::class.simpleName ?: "KFile") + ": /" + formatPath(path)
@@ -381,4 +460,7 @@ abstract class KFile(open val context: Context, open val path: String) {
         return absolutePath.hashCode()
     }
 
+    enum class Type {
+        STORAGE, DOCUMENT, URI
+    }
 }

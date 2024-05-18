@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "org.limao996"
-version = "1.0.0"
+version = "1.1.0"
 
 android {
     namespace = "org.limao996.kio"
@@ -41,7 +41,7 @@ android {
 }
 
 dependencies {
-    implementation("androidx.core:core-ktx:1.12.0")
+    implementation("androidx.core:core-ktx:1.13.0")
 }
 
 publishing {
@@ -49,7 +49,7 @@ publishing {
         register<MavenPublication>("release") {
             groupId = "com.github.limao996"
             artifactId = "Kio"
-            version = "1.0.0"
+            version = "1.1.0"
 
             afterEvaluate {
                 from(components["release"])

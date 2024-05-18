@@ -12,44 +12,29 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        getDatabasePath("test.txt").createNewFile()
-
-        val a = kio.open(
-            getDatabasePath("test.txt").absolutePath
-        )
-
-        if (!a.checkPermission()) a.requestPermission()
-        a.openOutputStream("t")
-            .writer()
-            .apply {
-                write("测试1")
-                close()
+        val a = kio.open("/sdcard/test.txt")
+        a.checkOrRequestPermission {
+            a.createNewFile()
+            a.openOutputStream("t").writer().use {
+                it.write("测试1")
             }
-        log(
-            "A",
-            a.openInputStream()
-                .reader()
-                .readText()
-        )
-
-        val b = kio.open("/sdcard/Android/data/bin.mt.plus/a.txt")
-        if (!b.checkPermission()) b.requestPermission()
-        else {
-            b.createNewFile()
-            b.openOutputStream("a")
-                .writer()
-                .apply {
-                    write("测试2")
-                    close()
-                }
             log(
-                "B",
-                b.openInputStream()
-                    .reader()
-                    .readText()
+                "A", a.openInputStream().reader().readText()
             )
-        }
 
+            val b = kio.open("/sdcard/Android/data/bin.mt.plus/a.txt")
+            b.checkOrRequestPermission {
+                b.createNewFile()
+                a.copyContentTo(b)
+                b.openOutputStream("a").writer().use {
+                    it.write("测试2")
+                }
+                log(
+                    "B", b.openInputStream().reader().readText()
+                )
+            }
+
+        }
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
